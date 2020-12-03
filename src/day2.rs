@@ -9,7 +9,7 @@ pub struct Password {
 }
 
 impl Password {
-    fn is_valid(&self) -> bool {
+    pub fn is_valid1(&self) -> bool {
         let mut letter_count = 0;
         for c in self.password.chars() {
             if c == self.letter {
@@ -21,9 +21,23 @@ impl Password {
         }
         letter_count >= self.lower
     }
+
+    pub fn is_valid2(&self) -> bool {
+        let mut encountered = false;
+        for c in self.password.chars() {
+            if c == self.letter {
+                if encountered {
+                    return false;
+                } else {
+                    encountered = true;
+                }
+            }
+        }
+        encountered
+    }
 }
 
-#[aoc_generator(day2, part1)]
+#[aoc_generator(day2)]
 fn generate_passwords(input: &str) -> Vec<Password> {
     let rc = Regex::new(r"(\d+)-(\d+) (\w): (\w+)").unwrap();
 
@@ -46,7 +60,19 @@ fn solve_part1(input: &[Password]) -> u32 {
     let mut counter = 0;
 
     for pwd in input {
-        if pwd.is_valid() {
+        if pwd.is_valid1() {
+            counter += 1;
+        }
+    }
+    counter
+}
+
+#[aoc(day2, part2)]
+fn solve_part2(input: &[Password]) -> u32 {
+    let mut counter = 0;
+
+    for pwd in input {
+        if pwd.is_valid2() {
             counter += 1;
         }
     }
