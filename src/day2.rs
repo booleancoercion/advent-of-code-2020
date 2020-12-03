@@ -34,8 +34,10 @@ impl Password {
     }
 
     pub fn is_valid2(&self) -> bool {
-        let chars: Vec<char> = self.password.chars().collect();
-        (chars[self.lower as usize - 1] == self.letter) ^ (chars[self.upper as usize - 1] == self.letter)
+        let mut chars = self.password.chars();
+        let a = self.lower as usize - 1;
+        let b = self.upper as usize - 1;
+        (chars.nth(a).unwrap() == self.letter) ^ (chars.nth(b - a - 1).unwrap() == self.letter)
     }
 }
 
