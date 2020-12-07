@@ -1,3 +1,5 @@
+#![feature(str_split_once)]
+
 use aoc_runner_derive::*;
 
 mod day1;
@@ -6,5 +8,6 @@ mod day3;
 mod day4;
 mod day5;
 mod day6;
+mod day7;
 
 aoc_lib!( year = 2020 );
