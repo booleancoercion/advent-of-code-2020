@@ -10,7 +10,9 @@ struct Bag {
 
 impl Bag {
     fn parse(from: &str) -> Bag {
-        let (part1, part2) = from.split_once(" contain ").unwrap();
+        let mut s = from.split(" contain ");
+        let part1 = s.next().unwrap();
+        let part2 = s.next().unwrap();
 
         let desc = {
             let mut part1_spaces = part1.split(' ');

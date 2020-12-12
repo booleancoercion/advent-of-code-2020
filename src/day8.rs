@@ -14,7 +14,10 @@ enum Instruction {
 fn generate(input: &str) -> Vec<Instruction> {
     input.lines()
         .map(|x| {
-            let (part1, part2) = x.split_once(' ').unwrap();
+            let mut s = x.split(' ');
+            let part1 = s.next().unwrap();
+            let part2 = s.next().unwrap();
+            
             let num = i32::from_str_radix(part2, 10).unwrap();
 
             match part1 {
