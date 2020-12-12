@@ -1,4 +1,4 @@
-use std::cmp::{max, min};
+use std::cmp::min;
 
 use aoc_runner_derive::*;
 
@@ -27,57 +27,53 @@ fn generate(input: &str) -> TileMatrix {
 
 #[aoc(day11, part1)]
 fn solve_part1(input: &TileMatrix) -> usize {
-    let mut current = input.clone();
-    let mut i_vals = (0, current.len()-1);
-    let mut j_vals = (0, current[0].len()-1);
-    loop {
-        // print_matrix(&current[i_vals.0..=i_vals.1]);
-        let prev = current;
-        let out = advance_matrix(&prev, i_vals, j_vals);
-        current = out.0;
-        i_vals = out.1;
-        j_vals = out.2;
+    let stable = advance_until_stable(input, count_occupied_neighbors, 4);
 
-        if i_vals.0 > i_vals.1 {
+    count_occupied(&stable)
+}
+
+#[aoc(day11, part2)]
+fn solve_part2(input: &TileMatrix) -> usize {
+    let stable = advance_until_stable(input, count_occupied_visible, 5);
+
+    count_occupied(&stable)
+}
+
+fn advance_until_stable(matrix: &TileMatrix, count: impl Fn(usize, usize, &TileMatrix) -> u8, threshold: u8) -> TileMatrix {
+    let mut current = matrix.clone();
+
+    loop {
+        let prev = current;
+        let out = advance_matrix(&prev, &count, threshold);
+        current = out.0;
+
+        if !out.1 {
             break;
         }
     }
-
-    current.iter()
-        .flatten()
-        .filter(|x| **x == OccupiedSeat)
-        .count()
+    current
 }
 
-fn advance_matrix(matrix: &TileMatrix, in_i_vals: (usize, usize), in_j_vals: (usize, usize))
--> (TileMatrix, (usize, usize), (usize, usize)) {
+fn advance_matrix(matrix: &TileMatrix, count: impl Fn(usize, usize, &TileMatrix) -> u8, threshold: u8) -> (TileMatrix, bool) {
     let mut output = matrix.clone();
+    let mut changed = false;
 
-    let mut i_vals = (usize::MAX, 0usize);
-    let mut j_vals = (usize::MAX, 0usize);
-
-    for i in sub_or_zero(in_i_vals.0, 1)..=min(in_i_vals.1+1, matrix.len()-1) {
-        for j in sub_or_zero(in_j_vals.0, 1)..=min(in_j_vals.1+1, matrix[0].len()-1) {
+    for i in 0..matrix.len() {
+        for j in 0..matrix[i].len() {
             if matrix[i][j] != Floor {
-                let occupied = count_occupied_neighbors(i, j, matrix);
+                let occupied = count(i, j, matrix);
                 if matrix[i][j] == EmptySeat && occupied == 0 {
                     output[i][j] = OccupiedSeat;
-                } else if matrix[i][j] == OccupiedSeat && occupied >= 4 {
+                    changed = true;
+                } else if matrix[i][j] == OccupiedSeat && occupied >= threshold {
                     output[i][j] = EmptySeat;
-                } else {
-                    continue;
+                    changed = true;
                 }
-
-                i_vals.0 = min(i_vals.0, i);
-                i_vals.1 = max(i_vals.1, i);
-
-                j_vals.0 = min(j_vals.0, j);
-                j_vals.1 = max(j_vals.1, j);
             }
         }
     }
 
-    (output, i_vals, j_vals)
+    (output, changed)
 }
 
 fn count_occupied_neighbors(i: usize, j: usize, matrix: &TileMatrix) -> u8 {
@@ -98,8 +94,41 @@ fn count_occupied_neighbors(i: usize, j: usize, matrix: &TileMatrix) -> u8 {
     count
 }
 
+fn count_occupied_visible(i: usize, j: usize, matrix: &TileMatrix) -> u8 {
+    let mut count = 0;
+    let leni = matrix.len() as isize;
+    let lenj = matrix[0].len() as isize;
+
+    for offset_i in -1..=1 {
+        for offset_j in -1..=1 {
+            if offset_i == 0 && offset_j == 0 {
+                continue;
+            }
+
+            let mut new_i = i as isize + offset_i;
+            let mut new_j = j as isize + offset_j;
+            while new_i >= 0 && new_i < leni && new_j >= 0 && new_j < lenj {
+                match matrix[new_i as usize][new_j as usize] {
+                    EmptySeat => break,
+                    OccupiedSeat => { count += 1; break },
+                    Floor => { new_i += offset_i; new_j += offset_j }
+                }
+            }
+        }
+    }
+
+    count
+}
+
 fn sub_or_zero(a: usize, b: usize) -> usize {
     a.checked_sub(b).unwrap_or(0)
+}
+
+fn count_occupied(matrix: &TileMatrix) -> usize {
+    matrix.iter()
+        .flatten()
+        .filter(|x| **x == OccupiedSeat)
+        .count()
 }
 
 #[allow(dead_code)]
