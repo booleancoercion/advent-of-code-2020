@@ -76,7 +76,7 @@ fn solve_part2(input: &Vec<(i64, i64)>) -> i64 {
         .map(|(ni, ai)| ai*((n/ni) * extended_gcd(n/ni, *ni).0))
         .sum();
     
-    sum.rem_euclid(n)
+    sum.rem_euclid(n) // since the solution is not minimal
 }
 
 fn prime_factors(num: i64) -> Vec<i64> {
