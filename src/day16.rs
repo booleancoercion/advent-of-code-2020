@@ -1,6 +1,3 @@
-use std::collections::HashSet;
-use std::iter::FromIterator;
-
 use aoc_runner_derive::*;
 
 struct Rule {
@@ -34,6 +31,68 @@ impl Rule {
 
 type Ticket = Vec<u16>;
 type Input = (Vec<Rule>, Ticket, Vec<Ticket>);
+
+#[derive(Clone)]
+struct IndexSet {
+    size: usize,
+    inner: Vec<bool>,
+    len: usize
+}
+
+impl IndexSet {
+    fn new(size: usize, initial: bool) -> IndexSet {
+        IndexSet {
+            size,
+            inner: vec![initial; size],
+            len: if initial { size } else { 0 }
+        }
+    }
+
+    fn contains(&self, val: usize) -> bool {
+        val < self.size && self.inner[val]
+    }
+
+    fn iter<'a>(&'a self) -> impl Iterator<Item=usize> + 'a {
+        self.inner
+            .iter()
+            .enumerate()
+            .filter(|(_, b)| **b)
+            .map(|(i, _)| i)
+    }
+
+    fn insert(&mut self, val: usize) {
+        if val < self.size && !self.inner[val] {
+            self.inner[val] = true;
+            self.len += 1;
+        }
+    }
+
+    fn remove(&mut self, val: usize) {
+        if val < self.size && self.inner[val] {
+            self.inner[val] = false;
+            self.len -= 1;
+        }
+    }
+
+    fn retain<T: FnMut(usize) -> bool>(&mut self, mut predicate: T) {
+        for i in 0..self.size {
+            if self.inner[i] && !predicate(i) && self.inner[i] {
+                self.inner[i] = false;
+                self.len -= 1;
+            }
+        }
+    }
+
+    fn len(&self) -> usize {
+        self.len
+    }
+}
+
+impl std::fmt::Debug for IndexSet {
+    fn fmt(&self, fmt: &mut std::fmt::Formatter) -> std::fmt::Result {
+        fmt.debug_list().entries(self.iter()).finish()
+    }
+}
 
 #[aoc_generator(day16)]
 fn generate(input: &str) -> (Vec<Rule>, Ticket, Vec<Ticket>) {
@@ -106,19 +165,12 @@ fn solve_part2(input: &Input) -> u64 {
     
     let rules = &input.0;
     
-    let mut rule_positions: Vec<HashSet<usize>> = vec![];
+    let mut rule_positions: Vec<IndexSet> = vec![];
 
     for rule in rules {
-        let mut flags: HashSet<usize> = HashSet::from_iter(0..rules.len());
+        let mut flags = IndexSet::new(rules.len(), true);
         for ticket in &valid_tickets {
-            let inner_flags: HashSet<usize> = HashSet::from_iter(
-                ticket.into_iter()
-                    .enumerate()
-                    .filter(|(_, val)| rule.applies(**val))
-                    .map(|(i, _)| i)
-            );
-
-            flags.retain(|x| inner_flags.contains(x));
+            flags.retain(|i| rule.applies(ticket[i]))
         }
 
         rule_positions.push(flags);
@@ -141,28 +193,43 @@ fn is_valid_ticket(ticket: &Ticket, rules: &[Rule]) -> bool {
         .all(|&val| is_valid_value(val, rules))
 }
 
-fn find_rules_permutation(rules: &[Rule], positions: &Vec<HashSet<usize>>) -> Vec<usize> {
-    let mut perm: Vec<usize> = vec![];
-    find_rules_permutation_inner(rules, positions, &mut perm, 0);
+fn find_rules_permutation(rules: &[Rule], positions: &Vec<IndexSet>) -> Vec<usize> {
+    let mut new_positions: Vec<_> = positions.into_iter()
+        .cloned()
+        .enumerate()
+        .collect();
+    new_positions.sort_unstable_by_key(|x| x.1.len());
+
+    let mut perm = vec![];
+    let mut encountered = IndexSet::new(rules.len(), false);
+
+    find_rules_permutation_inner(rules, &new_positions, &mut perm, &mut encountered);
     assert_eq!(perm.len(), rules.len());
-    perm
+    perm.sort_unstable_by_key(|x| x.0);
+    perm.iter()
+        .map(|x| x.1)
+        .collect()
 }
 
-fn find_rules_permutation_inner(rules: &[Rule], positions: &Vec<HashSet<usize>>, perm: &mut Vec<usize>, i: usize) -> bool {
+fn find_rules_permutation_inner(rules: &[Rule], positions: &Vec<(usize, IndexSet)>,
+perm: &mut Vec<(usize, usize)>, enc: &mut IndexSet) -> bool {
+    let i = perm.len();
     if i == rules.len() {
         return true;
     }
-
-    for pos in &positions[i] {
-        if perm.contains(pos) {
+    
+    for pos in positions[i].1.iter() {
+        if enc.contains(pos) {
             continue;
         }
 
-        perm.push(*pos);
-        let ret = find_rules_permutation_inner(rules, positions, perm, i+1);
+        perm.push((positions[i].0, pos));
+        enc.insert(pos);
+        let ret = find_rules_permutation_inner(rules, positions, perm, enc);
         if ret {
             return true;
         }
+        enc.remove(pos);
         perm.pop();
     }
 
@@ -170,25 +237,25 @@ fn find_rules_permutation_inner(rules: &[Rule], positions: &Vec<HashSet<usize>>,
 }
 
 #[allow(dead_code)]
-fn count_legal_permutations(rules: &[Rule], positions: &Vec<HashSet<usize>>) -> usize {
+fn count_legal_permutations(rules: &[Rule], positions: &Vec<IndexSet>) -> usize {
     let mut perm = vec![];
     count_legal_permutations_inner(rules, positions, &mut perm, 0)
 }
 
 #[allow(dead_code)]
-fn count_legal_permutations_inner(rules: &[Rule], positions: &Vec<HashSet<usize>>, perm: &mut Vec<usize>, i: usize) -> usize {
+fn count_legal_permutations_inner(rules: &[Rule], positions: &Vec<IndexSet>, perm: &mut Vec<usize>, i: usize) -> usize {
     if i == rules.len() {
         return 1;
     }
 
     let mut count = 0;
 
-    for pos in &positions[i] {
-        if perm.contains(pos) {
+    for pos in positions[i].iter() {
+        if perm.contains(&pos) {
             continue;
         }
 
-        perm.push(*pos);
+        perm.push(pos);
         count += count_legal_permutations_inner(rules, positions, perm, i+1);
         perm.pop();
     }
