@@ -3,7 +3,35 @@ use std::iter::FromIterator;
 
 use aoc_runner_derive::*;
 
-type Rule = (String, u16, u16, u16, u16);
+struct Rule {
+    a1: u16,
+    b1: u16,
+    a2: u16,
+    b2: u16
+}
+
+impl Rule {
+    fn new(ranges: &str) -> Rule {
+        let mut split_or = ranges.split(" or ");
+        let first_range = split_or.next().unwrap().trim();
+        let second_range = split_or.next().unwrap().trim();
+
+        let (a1, b1) = parse_range(first_range);
+        let (a2, b2) = parse_range(second_range);
+
+        Rule {
+            a1,
+            b1,
+            a2,
+            b2
+        }
+    }
+
+    fn applies(&self, val: u16) -> bool {
+        (self.a1 <= val && val <= self.b1) || (self.a2 <= val && val <= self.b2)
+    }
+}
+
 type Ticket = Vec<u16>;
 type Input = (Vec<Rule>, Ticket, Vec<Ticket>);
 
@@ -16,17 +44,10 @@ fn generate(input: &str) -> (Vec<Rule>, Ticket, Vec<Ticket>) {
         if line.len() == 0 {
             break;
         }
+
         let mut split_colon = line.split(':');
-        let field_name = split_colon.next().unwrap();
-
-        let mut split_or = split_colon.next().unwrap().split(" or ");
-        let first_range = split_or.next().unwrap().trim();
-        let second_range = split_or.next().unwrap().trim();
-
-        let (a1, b1) = parse_range(first_range);
-        let (a2, b2) = parse_range(second_range);
-
-        rules.push((field_name.to_string(), a1, b1, a2, b2));
+        let rule = Rule::new(split_colon.nth(1).unwrap());
+        rules.push(rule);
     }
 
     let my_ticket = parse_ticket(lines.nth(1).unwrap());
@@ -73,11 +94,7 @@ fn invalid_ticket_values(ticket: &Ticket, rules: &[Rule]) -> u16 {
 
 fn is_valid_value(val: u16, rules: &[Rule]) -> bool {
     rules.into_iter()
-        .any(|rule| satisfies_rule(val, rule))
-}
-
-fn satisfies_rule(val: u16, rule: &Rule) -> bool {
-    (rule.1 <= val && val <= rule.2) || (rule.3 <= val && val <= rule.4)
+        .any(|rule| rule.applies(val))
 }
 
 #[aoc(day16, part2)]
@@ -97,7 +114,7 @@ fn solve_part2(input: &Input) -> u64 {
             let inner_flags: HashSet<usize> = HashSet::from_iter(
                 ticket.into_iter()
                     .enumerate()
-                    .filter(|(_, val)| satisfies_rule(**val, rule))
+                    .filter(|(_, val)| rule.applies(**val))
                     .map(|(i, _)| i)
             );
 
