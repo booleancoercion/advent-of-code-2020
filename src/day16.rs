@@ -235,30 +235,3 @@ perm: &mut Vec<(usize, usize)>, enc: &mut IndexSet) -> bool {
 
     false
 }
-
-#[allow(dead_code)]
-fn count_legal_permutations(rules: &[Rule], positions: &Vec<IndexSet>) -> usize {
-    let mut perm = vec![];
-    count_legal_permutations_inner(rules, positions, &mut perm, 0)
-}
-
-#[allow(dead_code)]
-fn count_legal_permutations_inner(rules: &[Rule], positions: &Vec<IndexSet>, perm: &mut Vec<usize>, i: usize) -> usize {
-    if i == rules.len() {
-        return 1;
-    }
-
-    let mut count = 0;
-
-    for pos in positions[i].iter() {
-        if perm.contains(&pos) {
-            continue;
-        }
-
-        perm.push(pos);
-        count += count_legal_permutations_inner(rules, positions, perm, i+1);
-        perm.pop();
-    }
-
-    count
-}
