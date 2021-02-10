@@ -5,7 +5,7 @@ use aoc_runner_derive::*;
 #[derive(Debug)]
 struct Bag {
     description: String,
-    contains: Vec<(usize, String)>
+    contains: Vec<(usize, String)>,
 }
 
 impl Bag {
@@ -28,20 +28,16 @@ impl Bag {
             let mut spaces = bag.split(' ');
             let num = match usize::from_str_radix(spaces.next().unwrap(), 10) {
                 Ok(val) => val,
-                Err(_) => break
+                Err(_) => break,
             };
-            let desc = format!(
-                "{} {}",
-                spaces.next().unwrap(),
-                spaces.next().unwrap()
-            );
+            let desc = format!("{} {}", spaces.next().unwrap(), spaces.next().unwrap());
 
             contains.push((num, desc));
         }
 
         Bag {
             description: desc,
-            contains
+            contains,
         }
     }
 }
@@ -65,7 +61,7 @@ fn solve_part1(input: &Bags) -> usize {
     let mut results: HashMap<String, bool> = HashMap::new();
     let mut count = 0;
 
-    for (_, bag) in input {
+    for bag in input.values() {
         if contains_shiny_gold(bag, input, &mut results) {
             count += 1;
         }
@@ -88,7 +84,7 @@ fn contains_shiny_gold(bag: &Bag, input: &Bags, results: &mut HashMap<String, bo
         }
     }
     results.insert(bag.description.clone(), false);
-    return false;
+    false
 }
 
 #[aoc(day7, part2)]
@@ -102,10 +98,12 @@ fn count_inner_bags(bag: &Bag, input: &Bags, results: &mut HashMap<String, usize
         return result;
     }
 
-    let res = bag.contains.iter()
-        .map(|(num, desc)| num*(1+count_inner_bags(input.get(desc).unwrap(), input, results)))
+    let res = bag
+        .contains
+        .iter()
+        .map(|(num, desc)| num * (1 + count_inner_bags(input.get(desc).unwrap(), input, results)))
         .sum();
-    
+
     results.insert(bag.description.clone(), res);
     res
 }

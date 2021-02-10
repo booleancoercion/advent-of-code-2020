@@ -10,7 +10,7 @@ enum Direction {
 
     Forward,
     Left,
-    Right
+    Right,
 }
 
 impl Direction {
@@ -23,7 +23,7 @@ impl Direction {
             'F' => Forward,
             'L' => Left,
             'R' => Right,
-            _ => return None
+            _ => return None,
         })
     }
 
@@ -39,7 +39,7 @@ impl Direction {
             (South, Right) => West,
             (West, Right) => North,
 
-            _ => return None
+            _ => return None,
         })
     }
 
@@ -51,7 +51,7 @@ impl Direction {
             let out = curr.turn(dir);
             curr = match out {
                 Some(val) => val,
-                None => return None
+                None => return None,
             }
         }
 
@@ -65,7 +65,7 @@ impl Direction {
             South => (0, -1),
             West => (-1, 0),
 
-            _ => return None
+            _ => return None,
         })
     }
 }
@@ -74,10 +74,11 @@ struct Instruction(Direction, i32);
 
 #[aoc_generator(day12)]
 fn generate(input: &str) -> Vec<Instruction> {
-    input.lines()
+    input
+        .lines()
         .map(|line| {
             let c = line.chars().next().unwrap();
-            let num = i32::from_str_radix(&line[1..], 10).unwrap();
+            let num: i32 = line[1..].parse().unwrap();
 
             Instruction(Direction::from_char(c).unwrap(), num)
         })
@@ -91,15 +92,18 @@ fn solve_part1(input: &[Instruction]) -> i32 {
     let mut facing = East;
     for Instruction(dir, num) in input {
         let dir = match dir {
-            Left | Right => { facing = facing.turn_degs(*dir, *num).unwrap(); continue },
+            Left | Right => {
+                facing = facing.turn_degs(*dir, *num).unwrap();
+                continue;
+            }
 
             Forward => facing,
-            x => *x
+            x => *x,
         };
 
         let coords = dir.to_coords().unwrap();
-        pos.0 += num*coords.0;
-        pos.1 += num*coords.1;
+        pos.0 += num * coords.0;
+        pos.1 += num * coords.1;
     }
 
     pos.0.abs() + pos.1.abs()
@@ -116,7 +120,7 @@ fn solve_part2(input: &[Instruction]) -> i32 {
             Forward => {
                 pos.0 += waypoint.0 * num;
                 pos.1 += waypoint.1 * num;
-            },
+            }
 
             x => {
                 let coords = x.to_coords().unwrap();
@@ -139,11 +143,11 @@ fn turn_waypoint(waypoint: &mut (i32, i32), dir: Direction, deg: i32) {
             Left => {
                 waypoint.0 = -waypoint.1;
                 waypoint.1 = temp;
-            },
+            }
             Right => {
                 waypoint.0 = waypoint.1;
                 waypoint.1 = -temp;
-            },
+            }
 
             _ => {}
         }

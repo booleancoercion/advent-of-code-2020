@@ -3,7 +3,8 @@ use std::collections::HashMap;
 
 #[aoc_generator(day1)]
 fn generate(input: &str) -> Vec<u16> {
-    input.lines()
+    input
+        .lines()
         .map(|x| u16::from_str_radix(x, 10).unwrap())
         .collect()
 }
@@ -19,8 +20,8 @@ fn solve_part1(vec: &[u16]) -> u32 {
 
     for &x in vec {
         match map.get(&x) {
-            Some(&y) => return (x as u32)*(y as u32),
-            None => continue
+            Some(&y) => return (x as u32) * (y as u32),
+            None => continue,
         }
     }
     unreachable!()
@@ -40,12 +41,10 @@ fn solve_part2(vec: &[u16]) -> u32 {
     for i in 0..n {
         let x = vec[i];
 
-        for j in i..n {
-            let y = vec[j];
-
-            match map.get(&(x+y)) {
-                Some(&z) => return (x as u32)*(y as u32)*(z as u32),
-                None => continue
+        for &y in &vec[i..n] {
+            match map.get(&(x + y)) {
+                Some(&z) => return (x as u32) * (y as u32) * (z as u32),
+                None => continue,
             }
         }
     }

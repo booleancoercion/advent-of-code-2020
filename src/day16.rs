@@ -1,6 +1,11 @@
 use aoc_runner_derive::*;
 
-struct Rule { a1: u16, b1: u16, a2: u16, b2: u16 }
+struct Rule {
+    a1: u16,
+    b1: u16,
+    a2: u16,
+    b2: u16,
+}
 
 impl Rule {
     fn new(ranges: &str) -> Rule {
@@ -26,7 +31,7 @@ type Input = (Vec<Rule>, Ticket, Vec<Ticket>);
 struct IndexSet {
     size: usize,
     inner: Vec<bool>,
-    len: usize
+    len: usize,
 }
 
 impl IndexSet {
@@ -34,7 +39,7 @@ impl IndexSet {
         IndexSet {
             size,
             inner: vec![initial; size],
-            len: if initial { size } else { 0 }
+            len: if initial { size } else { 0 },
         }
     }
 
@@ -42,8 +47,12 @@ impl IndexSet {
         val < self.size && self.inner[val]
     }
 
-    fn iter<'a>(&'a self) -> impl Iterator<Item=usize> + 'a {
-        self.inner.iter().enumerate().filter(|(_, b)| **b).map(|(i, _)| i)
+    fn iter(&self) -> impl Iterator<Item = usize> + '_ {
+        self.inner
+            .iter()
+            .enumerate()
+            .filter(|(_, b)| **b)
+            .map(|(i, _)| i)
     }
 
     fn insert(&mut self, val: usize) {
@@ -62,7 +71,7 @@ impl IndexSet {
 
     fn retain<T: FnMut(usize) -> bool>(&mut self, mut predicate: T) {
         for i in 0..self.size {
-            if self.inner[i] && !predicate(i) && self.inner[i] {
+            if self.inner[i] && !predicate(i) {
                 self.inner[i] = false;
                 self.len -= 1;
             }
@@ -86,7 +95,9 @@ fn generate(input: &str) -> (Vec<Rule>, Ticket, Vec<Ticket>) {
     let mut lines = input.lines();
 
     for line in lines.by_ref() {
-        if line.len() == 0 { break; }
+        if line.is_empty() {
+            break;
+        }
         let mut split_colon = line.split(':');
         let rule = Rule::new(split_colon.nth(1).unwrap());
         rules.push(rule);
@@ -110,35 +121,42 @@ fn parse_range(range: &str) -> (u16, u16) {
 }
 
 fn parse_ticket(ticket: &str) -> Ticket {
-    ticket.split(',').map(str::parse).map(Result::unwrap).collect()
+    ticket
+        .split(',')
+        .map(str::parse)
+        .map(Result::unwrap)
+        .collect()
 }
-
 
 #[aoc(day16, part1)]
 fn solve_part1(input: &Input) -> u16 {
     let tickets = &input.2;
 
-    tickets.into_iter()
-        .map(|x| invalid_ticket_values(x, &input.0)).sum()
+    tickets
+        .iter()
+        .map(|x| invalid_ticket_values(x, &input.0))
+        .sum()
 }
 
-fn invalid_ticket_values(ticket: &Ticket, rules: &[Rule]) -> u16 {
-    ticket.into_iter().filter(|x| !is_valid_value(**x, rules)).sum()
+fn invalid_ticket_values(ticket: &[u16], rules: &[Rule]) -> u16 {
+    ticket.iter().filter(|x| !is_valid_value(**x, rules)).sum()
 }
 
 fn is_valid_value(val: u16, rules: &[Rule]) -> bool {
-    rules.into_iter().any(|rule| rule.applies(val))
+    rules.iter().any(|rule| rule.applies(val))
 }
 
 #[aoc(day16, part2)]
 fn solve_part2(input: &Input) -> u64 {
-    let valid_tickets: Vec<Ticket> = input.2
-        .iter().cloned()
+    let valid_tickets: Vec<Ticket> = input
+        .2
+        .iter()
+        .cloned()
         .filter(|ticket| is_valid_ticket(ticket, &input.0))
         .collect();
-    
+
     let rules = &input.0;
-    
+
     let mut rule_positions: Vec<IndexSet> = vec![];
 
     for rule in rules {
@@ -156,17 +174,19 @@ fn solve_part2(input: &Input) -> u64 {
     let rule_positions = find_rules_permutation(rules, &rule_positions);
     let my_ticket = &input.1;
 
-    rule_positions.iter().take(6)
-        .map(|rule_pos| my_ticket[*rule_pos] as u64).product()
+    rule_positions
+        .iter()
+        .take(6)
+        .map(|rule_pos| my_ticket[*rule_pos] as u64)
+        .product()
 }
 
-fn is_valid_ticket(ticket: &Ticket, rules: &[Rule]) -> bool {
-    ticket.into_iter().all(|&val| is_valid_value(val, rules))
+fn is_valid_ticket(ticket: &[u16], rules: &[Rule]) -> bool {
+    ticket.iter().all(|&val| is_valid_value(val, rules))
 }
 
-fn find_rules_permutation(rules: &[Rule], positions: &Vec<IndexSet>) -> Vec<usize> {
-    let mut new_positions: Vec<_> = positions.into_iter()
-        .cloned().enumerate().collect();
+fn find_rules_permutation(rules: &[Rule], positions: &[IndexSet]) -> Vec<usize> {
+    let mut new_positions: Vec<_> = positions.iter().cloned().enumerate().collect();
     new_positions.sort_unstable_by_key(|x| x.1.len());
 
     let mut perm = vec![];
@@ -178,18 +198,28 @@ fn find_rules_permutation(rules: &[Rule], positions: &Vec<IndexSet>) -> Vec<usiz
     perm.iter().map(|x| x.1).collect()
 }
 
-fn find_rules_permutation_inner(rules: &[Rule], positions: &Vec<(usize, IndexSet)>,
-perm: &mut Vec<(usize, usize)>, enc: &mut IndexSet) -> bool {
+fn find_rules_permutation_inner(
+    rules: &[Rule],
+    positions: &[(usize, IndexSet)],
+    perm: &mut Vec<(usize, usize)>,
+    enc: &mut IndexSet,
+) -> bool {
     let i = perm.len();
-    if i == rules.len() { return true; }
-    
+    if i == rules.len() {
+        return true;
+    }
+
     for pos in positions[i].1.iter() {
-        if enc.contains(pos) { continue; }
+        if enc.contains(pos) {
+            continue;
+        }
 
         perm.push((positions[i].0, pos));
         enc.insert(pos);
         let ret = find_rules_permutation_inner(rules, positions, perm, enc);
-        if ret { return true; }
+        if ret {
+            return true;
+        }
         enc.remove(pos);
         perm.pop();
     }

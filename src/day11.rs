@@ -8,20 +8,25 @@ use Tile::*;
 enum Tile {
     Floor,
     EmptySeat,
-    OccupiedSeat
+    OccupiedSeat,
 }
 
-type TileMatrix = Vec<Vec<Tile>>;
+type TileMatrix = [Vec<Tile>];
 
 #[aoc_generator(day11)]
-fn generate(input: &str) -> TileMatrix {
-    input.lines()
-        .map(|line| line.chars().map(|c| match c {
-                '.' => Floor,
-                'L' => EmptySeat,
-                '#' => OccupiedSeat,
-                _ => unreachable!()
-            }).collect())
+fn generate(input: &str) -> Vec<Vec<Tile>> {
+    input
+        .lines()
+        .map(|line| {
+            line.chars()
+                .map(|c| match c {
+                    '.' => Floor,
+                    'L' => EmptySeat,
+                    '#' => OccupiedSeat,
+                    _ => unreachable!(),
+                })
+                .collect()
+        })
         .collect()
 }
 
@@ -39,8 +44,12 @@ fn solve_part2(input: &TileMatrix) -> usize {
     count_occupied(&stable)
 }
 
-fn advance_until_stable(matrix: &TileMatrix, count: impl Fn(usize, usize, &TileMatrix) -> u8, threshold: u8) -> TileMatrix {
-    let mut current = matrix.clone();
+fn advance_until_stable(
+    matrix: &TileMatrix,
+    count: impl Fn(usize, usize, &TileMatrix) -> u8,
+    threshold: u8,
+) -> Vec<Vec<Tile>> {
+    let mut current = matrix.to_vec();
 
     loop {
         let prev = current;
@@ -54,8 +63,12 @@ fn advance_until_stable(matrix: &TileMatrix, count: impl Fn(usize, usize, &TileM
     current
 }
 
-fn advance_matrix(matrix: &TileMatrix, count: impl Fn(usize, usize, &TileMatrix) -> u8, threshold: u8) -> (TileMatrix, bool) {
-    let mut output = matrix.clone();
+fn advance_matrix(
+    matrix: &TileMatrix,
+    count: impl Fn(usize, usize, &TileMatrix) -> u8,
+    threshold: u8,
+) -> (Vec<Vec<Tile>>, bool) {
+    let mut output = matrix.to_vec();
     let mut changed = false;
 
     for i in 0..matrix.len() {
@@ -78,9 +91,9 @@ fn advance_matrix(matrix: &TileMatrix, count: impl Fn(usize, usize, &TileMatrix)
 
 fn count_occupied_neighbors(i: usize, j: usize, matrix: &TileMatrix) -> u8 {
     let mut count = 0;
-    
-    for new_i in sub_or_zero(i, 1)..=min(i+1, matrix.len()-1) {
-        for new_j in sub_or_zero(j, 1)..=min(j+1, matrix[0].len()-1) {
+
+    for new_i in i.saturating_sub(1)..=min(i + 1, matrix.len() - 1) {
+        for new_j in j.saturating_sub(1)..=min(j + 1, matrix[0].len() - 1) {
             if new_i == i && new_j == j {
                 continue;
             }
@@ -110,8 +123,14 @@ fn count_occupied_visible(i: usize, j: usize, matrix: &TileMatrix) -> u8 {
             while new_i >= 0 && new_i < leni && new_j >= 0 && new_j < lenj {
                 match matrix[new_i as usize][new_j as usize] {
                     EmptySeat => break,
-                    OccupiedSeat => { count += 1; break },
-                    Floor => { new_i += offset_i; new_j += offset_j }
+                    OccupiedSeat => {
+                        count += 1;
+                        break;
+                    }
+                    Floor => {
+                        new_i += offset_i;
+                        new_j += offset_j
+                    }
                 }
             }
         }
@@ -120,12 +139,9 @@ fn count_occupied_visible(i: usize, j: usize, matrix: &TileMatrix) -> u8 {
     count
 }
 
-fn sub_or_zero(a: usize, b: usize) -> usize {
-    a.checked_sub(b).unwrap_or(0)
-}
-
 fn count_occupied(matrix: &TileMatrix) -> usize {
-    matrix.iter()
+    matrix
+        .iter()
         .flatten()
         .filter(|x| **x == OccupiedSeat)
         .count()
@@ -134,12 +150,12 @@ fn count_occupied(matrix: &TileMatrix) -> usize {
 #[allow(dead_code)]
 fn print_matrix(matrix: &[Vec<Tile>]) {
     let mut out = String::new();
-    for i in 0..matrix.len() {
-        for j in 0..matrix[i].len() {
-            out.push(match matrix[i][j] {
+    for row in matrix {
+        for &item in row {
+            out.push(match item {
                 Floor => '.',
                 EmptySeat => 'L',
-                OccupiedSeat => '#'
+                OccupiedSeat => '#',
             });
         }
         out.push('\n');

@@ -1,6 +1,6 @@
 use aoc_runner_derive::*;
 
-type TreeMatrix = Vec<Vec<bool>>;
+type TreeMatrix = [Vec<bool>];
 
 #[aoc_generator(day3)]
 fn generate_tree_matrix(input: &str) -> Vec<Vec<bool>> {

@@ -4,9 +4,7 @@ use aoc_runner_derive::*;
 
 #[aoc_generator(day9)]
 fn generate(input: &str) -> Vec<u64> {
-    input.lines()
-        .map(|x| u64::from_str_radix(x, 10).unwrap())
-        .collect()
+    input.lines().map(|x| x.parse().unwrap()).collect()
 }
 
 #[aoc(day9, part1)]
@@ -18,7 +16,7 @@ fn solve_part1(input: &[u64]) -> u64 {
         if !check_sum(&latest_nums, input[i]) {
             return input[i];
         }
-        latest_nums.remove(&input[i-25]);
+        latest_nums.remove(&input[i - 25]);
         latest_nums.insert(input[i]);
     }
     unreachable!()
@@ -28,7 +26,7 @@ fn check_sum(latest: &HashSet<u64>, num: u64) -> bool {
     for &e in latest {
         let diff = match num.checked_sub(e) {
             Some(diff) => diff,
-            None => continue
+            None => continue,
         };
         if latest.contains(&diff) {
             return true;
@@ -43,11 +41,10 @@ fn solve_part2(input: &[u64]) -> u64 {
     for i in 0..input.len() {
         let mut sum = input[i];
 
-        for j in i+1..input.len() {
+        for j in i + 1..input.len() {
             sum += input[j];
             if sum == invalid_num {
-                return *input[i..=j].iter().min().unwrap()
-                     + *input[i..=j].iter().max().unwrap();
+                return *input[i..=j].iter().min().unwrap() + *input[i..=j].iter().max().unwrap();
             }
         }
     }

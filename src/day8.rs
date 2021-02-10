@@ -7,24 +7,25 @@ use Instruction::*;
 enum Instruction {
     ACC(i32),
     JMP(i32),
-    NOP(i32)
+    NOP(i32),
 }
 
 #[aoc_generator(day8)]
 fn generate(input: &str) -> Vec<Instruction> {
-    input.lines()
+    input
+        .lines()
         .map(|x| {
             let mut s = x.split(' ');
             let part1 = s.next().unwrap();
             let part2 = s.next().unwrap();
-            
+
             let num = i32::from_str_radix(part2, 10).unwrap();
 
             match part1 {
                 "acc" => ACC(num),
                 "jmp" => JMP(num),
                 "nop" => NOP(num),
-                _ => unreachable!()
+                _ => unreachable!(),
             }
         })
         .collect()
@@ -39,7 +40,7 @@ impl std::fmt::Display for Helper {
 }
 
 #[aoc(day8, part1)]
-fn solve_part1(input: &Vec<Instruction>) -> Helper {
+fn solve_part1(input: &[Instruction]) -> Helper {
     let mut acc = 0;
     let mut i = 0;
     let mut encountered = HashSet::new();
@@ -53,9 +54,9 @@ fn solve_part1(input: &Vec<Instruction>) -> Helper {
             ACC(num) => {
                 acc += num;
                 i += 1;
-            },
+            }
             NOP(_) => i += 1,
-            JMP(num) => i = (i as i32 + num) as usize
+            JMP(num) => i = (i as i32 + num) as usize,
         }
     }
 
@@ -63,15 +64,15 @@ fn solve_part1(input: &Vec<Instruction>) -> Helper {
 }
 
 #[aoc(day8, part2)]
-fn solve_part2(input: &Vec<Instruction>) -> i32 {
-    let mut copy = input.clone();
+fn solve_part2(input: &[Instruction]) -> i32 {
+    let mut copy = input.to_vec();
 
     for i in 0..copy.len() {
         let prev = copy[i];
         match prev {
             ACC(_) => continue,
             JMP(num) => copy[i] = NOP(num),
-            NOP(num) => copy[i] = JMP(num)
+            NOP(num) => copy[i] = JMP(num),
         }
         if let Helper(true, acc) = solve_part1(&copy) {
             return acc;

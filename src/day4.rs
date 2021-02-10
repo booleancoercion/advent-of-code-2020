@@ -23,20 +23,20 @@ macro_rules! handle_year {
             return false;
         }
         let year = parse_or_return!($val, false);
-        $lower <= year && year <= $upper
-    }}
+        ($lower..=$upper).contains(&year)
+    }};
 }
 
 macro_rules! parse_or_return {
     ($e:expr, $ret:expr) => {
         match u16::from_str_radix($e, 10) {
             Ok(v) => v,
-            Err(_) => return $ret
+            Err(_) => return $ret,
         }
     };
 }
 
-static EYE_COLORS: [&'static str; 7] = ["amb", "blu", "brn", "gry", "grn", "hzl", "oth"];
+static EYE_COLORS: [&str; 7] = ["amb", "blu", "brn", "gry", "grn", "hzl", "oth"];
 
 impl PassportAttribute {
     fn check(&self, val: &str) -> bool {
@@ -46,22 +46,22 @@ impl PassportAttribute {
             ExpirationYear => handle_year!(val, 2020, 2030),
 
             Height => {
-                let height = parse_or_return!(&val[..val.len()-2], false);
-                match &val[val.len()-2..] {
-                    "cm" => 150 <= height && height <= 193,
-                    "in" => 59 <= height && height <= 76,
-                    _ => false
+                let height = parse_or_return!(&val[..val.len() - 2], false);
+                match &val[val.len() - 2..] {
+                    "cm" => (150..=193).contains(&height),
+                    "in" => (59..=76).contains(&height),
+                    _ => false,
                 }
-            },
+            }
             HairColor => {
-                if val.chars().nth(0).unwrap() != '#' || val.len() != 7 {
+                if !val.starts_with('#') || val.len() != 7 {
                     return false;
                 }
                 u32::from_str_radix(&val[1..], 16).is_ok()
-            },
+            }
             EyeColor => EYE_COLORS.contains(&val),
             PassportID => val.len() == 9 && u32::from_str_radix(&val, 10).is_ok(),
-            CountryID => true
+            CountryID => true,
         }
     }
 }
@@ -72,7 +72,7 @@ fn generate(input: &str) -> Vec<Passport> {
 
     let mut current = Passport::new();
     for line in input.lines() {
-        if line.len() == 0 {
+        if line.is_empty() {
             output.push(current);
             current = Passport::new();
             continue;
@@ -83,7 +83,7 @@ fn generate(input: &str) -> Vec<Passport> {
             current.insert(attr, val);
         }
     }
-    if current.len() != 0 {
+    if !current.is_empty() {
         output.push(current);
     }
 
@@ -110,15 +110,20 @@ fn parse_attribute(attr: &str) -> Option<(PassportAttribute, String)> {
     Some((first, second.to_string()))
 }
 
-
 #[aoc(day4, part1)]
 fn solve_part1(input: &[Passport]) -> usize {
-    input.iter()
-        .filter(|x| is_valid_passport(x))
-        .count()
+    input.iter().filter(|x| is_valid_passport(x)).count()
 }
 
-static TO_CHECK: [PassportAttribute; 7] = [BirthYear, IssueYear, ExpirationYear, Height, HairColor, EyeColor, PassportID];
+static TO_CHECK: [PassportAttribute; 7] = [
+    BirthYear,
+    IssueYear,
+    ExpirationYear,
+    Height,
+    HairColor,
+    EyeColor,
+    PassportID,
+];
 
 fn is_valid_passport(passport: &Passport) -> bool {
     for attr in &TO_CHECK {
@@ -132,16 +137,14 @@ fn is_valid_passport(passport: &Passport) -> bool {
 
 #[aoc(day4, part2)]
 fn solve_part2(input: &[Passport]) -> usize {
-    input.iter()
-        .filter(|x| is_valid_passport_strict(x))
-        .count()
+    input.iter().filter(|x| is_valid_passport_strict(x)).count()
 }
 
 fn is_valid_passport_strict(passport: &Passport) -> bool {
     for attr in &TO_CHECK {
         let val = match passport.get(attr) {
             Some(val) => val,
-            None => return false
+            None => return false,
         };
 
         if !attr.check(val) {

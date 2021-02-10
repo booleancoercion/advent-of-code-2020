@@ -10,7 +10,7 @@ fn generate(input: &str) -> Vec<Group> {
     let mut current_group = Group::new();
 
     for line in input.lines() {
-        if line.len() == 0 {
+        if line.is_empty() {
             output.push(current_group);
             current_group = Group::new();
             continue;
@@ -21,7 +21,7 @@ fn generate(input: &str) -> Vec<Group> {
         }
         current_group.push(current_person);
     }
-    if current_group.len() != 0 {
+    if !current_group.is_empty() {
         output.push(current_group);
     }
 
@@ -49,8 +49,8 @@ fn solve_part2(input: &[Group]) -> usize {
     for g in input {
         let mut first = g[0].clone();
 
-        for i in 1..g.len() {
-            first.retain(|c| g[i].contains(c));
+        for x in g.iter().skip(1) {
+            first.retain(|c| x.contains(c));
         }
         count += first.len();
     }

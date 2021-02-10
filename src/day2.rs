@@ -4,19 +4,19 @@ pub struct Password {
     pub lower: u8,
     pub upper: u8,
     pub letter: char,
-    pub password: String
+    pub password: String,
 }
 
 impl Password {
     pub fn parse(string: &str) -> Password {
         let hyphen_i = string.find('-').unwrap();
         let space_i = string.find(' ').unwrap();
-    
+
         Password {
             lower: u8::from_str_radix(&string[..hyphen_i], 10).unwrap(),
-            upper: u8::from_str_radix(&string[hyphen_i+1..space_i], 10).unwrap(),
-            letter: string[space_i+1..].chars().nth(0).unwrap(),
-            password: string[space_i+4..].to_string()
+            upper: u8::from_str_radix(&string[hyphen_i + 1..space_i], 10).unwrap(),
+            letter: string[space_i + 1..].chars().next().unwrap(),
+            password: string[space_i + 4..].to_string(),
         }
     }
 
